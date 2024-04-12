@@ -79,21 +79,98 @@ class Automaton(object):
         nodes = {};
         stack = [TableauNode([init], [expr])];
         while(stack):
+
+            """
+            TODO (LTL lab): implement the Gerth algorithm.
+
+                m = n.new.pop();
+                if(m.op==...):
+                    ....
+                elif(m.op==...):
+                    
+                else:
+                    raise NotImplementedError(m.op);
+
+            """
+
             n = stack.pop();
 
-        """
-        TODO (LTL lab): implement the Gerth algorithm.
+            if not n.new:
+                if n.key in nodes.keys():
+                    nodes[n.key].incoming.update(n.incoming)
+                else:
+                    nodes[n.key] = n
+                    stack.append(TableauNode(incoming=[n], new=n.next, old=[], next=[]))
 
-            m = n.new.pop();
-            if(m.op==...):
-                ....
-            elif(m.op==...):
-                
             else:
-                raise NotImplementedError(m.op);
+                m = n.new.pop();
+                
+                match m.op:
 
-        """
-            stack.append(n);
+                    case "value" | "not":
+                        assert(m.op != "not" or m.args[0].op == "value")
+                        if not (m == ltl.Expression.FALSE) and not (~m in n.old):
+                            if not (m == ltl.Expression.TRUE):
+                                n.old.add(m)
+                            stack.append(n)
+
+                    case "and":
+                        n.old.add(m)
+                        if m.args[0] not in n.old:
+                            n.new.add(m.args[0]) 
+                        if m.args[1] not in n.old:
+                            n.new.add(m.args[1]) 
+                        stack.append(n)
+                    
+                    case "or":
+
+                        n.old.add(m)
+
+                        add_new_0 = set([m.args[0]]).difference(n.old)
+                        add_new_1 = set([m.args[1]]).difference(n.old)
+                        if add_new_0 not in n.old:
+                            stack.append(TableauNode(incoming=n.incoming, new=n.new.union(add_new_0), old=n.old, next=n.next))
+                        if add_new_1 not in n.old:
+                            stack.append(TableauNode(incoming=n.incoming, new=n.new.union(add_new_1), old=n.old, next=n.next))
+                        if not add_new_0 or not add_new_1:
+                            stack.append(n)
+
+                    case "next":
+                        n.old.add(m)
+                        n.next.add(m.args[0])
+                        stack.append(TableauNode(incoming=n.incoming, new=n.new, old=n.old, next=n.next))
+
+                    case "until":
+
+                        n.old.add(m)
+
+                        new_next = n.next.union(set([m]))
+                        add_new = set([m.args[0]]).difference(n.old)
+                        stack.append(TableauNode(incoming=n.incoming, new=n.new.union(add_new), old=n.old, next=new_next))
+
+                        add_new = set([m.args[1]]).difference(n.old)
+                        if add_new:
+                            stack.append(TableauNode(incoming=n.incoming, new=n.new.union(add_new), old=n.old, next=n.next))
+                        else:
+                            stack.append(n)
+
+                    case "release":
+
+                        n.old.add(m)
+
+                        new_next = n.next.union(set([m]))
+                        add_new = set([m.args[1]]).difference(n.old)
+                        stack.append(TableauNode(incoming=n.incoming, new=n.new.union(add_new), old=n.old, next=new_next))
+                        
+                        add_new = set([m.args[0],m.args[1]]).difference(n.old)
+                        if add_new:
+                            stack.append(TableauNode(incoming=n.incoming, new=n.new.union(add_new), old=n.old, next=n.next))
+                        else:
+                            stack.append(n)
+
+                    case _:
+                        raise NotImplementedError(m.op);
+            
 
         # prepare accept sets
         def subexpr(expr, lst):
