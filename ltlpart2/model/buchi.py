@@ -329,6 +329,23 @@ class Product(model.Model):
             of a given `node`, or the default value "white" if that node hasn't
             been colored yet.
             """
+
+            color[s] = Color.CYAN
+
+            for t,_ in self.nextStates(s):
+                assert( not 
+                       ((color.get(t, Color.WHITE) is Color.CYAN) and
+                        (s.accepting or t.accepting))
+                    )
+                if color.get(t, Color.WHITE) is Color.WHITE:
+                    blue(t)
+
+            if s.accepting:
+                red(s)
+                color[s] = Color.RED
+            else:
+                color[s] = Color.BLUE
+
             stack.pop();
 
         def red(s):
@@ -336,6 +353,13 @@ class Product(model.Model):
             """
             TODO (LTL lab): implement red phase of NDFS.
             """
+
+            for t,_ in self.nextStates(s):
+                assert( not (color.get(t, Color.WHITE) is Color.CYAN))
+                if color.get(t, Color.WHITE) is Color.BLUE:
+                    color[t] = Color.RED
+                    red(t)
+
             stack.pop();
 
         for i, _ in self.nextStates(self.initialState):
