@@ -333,10 +333,10 @@ class Product(model.Model):
             color[s] = Color.CYAN
 
             for t,_ in self.nextStates(s):
-                assert( not 
-                       ((color.get(t, Color.WHITE) is Color.CYAN) and
-                        (s.accepting or t.accepting))
-                    )
+                if((color.get(t, Color.WHITE) is Color.CYAN) 
+                   and (s.accepting or t.accepting)):
+                    raise AssertionError("report cycle")
+
                 if color.get(t, Color.WHITE) is Color.WHITE:
                     blue(t)
 
@@ -355,7 +355,8 @@ class Product(model.Model):
             """
 
             for t,_ in self.nextStates(s):
-                assert( not (color.get(t, Color.WHITE) is Color.CYAN))
+                if(color.get(t, Color.WHITE) is Color.CYAN):
+                    raise AssertionError("report cycle")
                 if color.get(t, Color.WHITE) is Color.BLUE:
                     color[t] = Color.RED
                     red(t)
